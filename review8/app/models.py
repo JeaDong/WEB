@@ -16,6 +16,14 @@ class Permission:
     MODERATE = 8
     ADMIN = 16
 
+class Follow(db.Model):
+    __tablename__ = 'follows'
+    follower_id = db.Column(db.Integer, db.ForeignKey('users.id'),
+                            primary_key=True)
+    followed_id = db.Column(db.Integer, db.ForeignKey('users.id'),
+                            primary_key=True)
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+
 class Role(db.Model):
     __tablename__ = 'roles'
     id = db.Column(db.Integer, primary_key=True)
@@ -79,6 +87,16 @@ class User(UserMixin,db.Model):
     last_seen = db.Column(db.DateTime(), default=datetime.utcnow)#由ping()函数不断刷新
     avatar_hash = db.Column(db.String(32))#储存md5散列值
     posts = db.relationship('Post', backref='author', lazy='dynamic')
+    followed = db.relationship('Follow',#没看懂这个是怎么实现的
+                               foreign_keys=[Follow.follower_id],
+                               backref=db.backref('follower', lazy='joined'),
+                               lazy='dynamic',
+                               cascade='all, delete-orphan')
+    followers = db.relationship('Follow',
+                                foreign_keys=[Follow.followed_id],
+                                backref=db.backref('followed', lazy='joined'),
+                                lazy='dynamic',
+                                cascade='all, delete-orphan')
 
     def __init__(self, **kwargs):
         super(User, self).__init__(**kwargs)#超类，避免多重继承
@@ -171,6 +189,28 @@ class User(UserMixin,db.Model):
         hash = hashlib.md5(self.email.lower().encode('utf-8')).hexdigest()#并不懂为什么要这么写？生成md5散列值？
         return '{url}/{hash}?s={size}&d={default}&r={rating}'.format(
             url=url, hash=hash, size=size, default=default, rating=rating)
+
+    def follow(self, user):#下面这4个函数有待研究
+        if not self.is_following(user):
+            f = Follow(followed=user)
+            self.followed.append(f)
+
+    def unfollow(self, user):
+        f = self.followed.filter_by(followed_id=user.id).first()
+        if f:
+            self.followed.remove(f)
+
+    def is_following(self, user):
+        if user.id is None:
+            return False
+        return self.followed.filter_by(
+            followed_id=user.id).first() is not None
+
+    def is_followed_by(self, user):
+        if user.id is None:
+            return False
+        return self.followers.filter_by(
+            follower_id=user.id).first() is not None
 
     def __repr__(self):
         return '<User %r>' % self.username

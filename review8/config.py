@@ -16,6 +16,7 @@ class Config:
     SQLALCHEMY_TRACK_MODIFICATIONS = False#不懂
     SQLALCHEMY_COMMIT_ON_TEARDOWN = True#每次提交结果自动保持到数据库
     FLASKY_POSTS_PER_PAGE = 20
+    FLASKY_FOLLOWERS_PER_PAGE = 20
     @staticmethod
     def init_app(app):#对配置环境初始化
         pass
