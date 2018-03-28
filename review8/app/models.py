@@ -108,6 +108,14 @@ class User(UserMixin,db.Model):
         if self.email is not None and self.avatar_hash is None:
             self.avatar_hash = self.gravatar_hash()
             
+    @staticmethod
+    def add_self_follows():
+        for user in User.query.all():
+            if not user.is_following(user):
+                user.follow(user)
+                db.session.add(user)
+                db.session.commit()
+                
     @property
     def password(self):#生成的散列值无法还原密码
         raise AttributeError('password is not a readable attribute')
@@ -211,6 +219,11 @@ class User(UserMixin,db.Model):
             return False
         return self.followers.filter_by(
             follower_id=user.id).first() is not None
+
+    @property#关联过滤查询所关注的人的文章
+    def followed_posts(self):
+        return Post.query.join(Follow, Follow.followed_id == Post.author_id)\
+            .filter(Follow.follower_id == self.id)
 
     def __repr__(self):
         return '<User %r>' % self.username
