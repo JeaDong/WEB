@@ -50,3 +50,7 @@ class EditProfileAdminForm(FlaskForm):
 class PostForm(FlaskForm):
     body =  PageDownField("What's on your mind?", validators=[Required()])#PageDownField与WTForms中的TextAreaField接口一致
     submit = SubmitField('Submit')
+
+class CommentForm(FlaskForm):
+    body = StringField('Enter your comment', validators=[DataRequired()])
+    submit = SubmitField('Submit')
